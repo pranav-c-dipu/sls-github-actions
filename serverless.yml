@@ -1,0 +1,91 @@
+service: notes-api2
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+
+functions:
+  authorizer:
+     handler: authorizer.handler
+     environment:
+        USER_POOL_ID: !Ref cognitoUserPool
+        COGNITO_CLIENT_ID: !Ref cognitoUserPoolWebClient
+
+  createNote:
+    handler: index.createNote
+    environment:
+       NOTES_TABLE_NAME: !Ref MyDynamoDBTable
+       AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1    
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - dynamodb:PutItem
+        Resource: !GetAtt MyDynamoDBTable.Arn
+    events:
+      - http:
+          method: post
+          path: notes
+          authorizer: authorizer
+          
+
+  updateNote:
+    handler: index.updateNote
+    environment:
+       NOTES_TABLE_NAME: !Ref MyDynamoDBTable
+       AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1 
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - dynamodb:UpdateItem
+        Resource: !GetAtt MyDynamoDBTable.Arn       
+    events:
+      - http:
+          method: put
+          path: notes/{id}
+          authorizer: authorizer
+         
+
+  deleteNote:
+    handler: index.deleteNote
+    environment:
+       NOTES_TABLE_NAME: !Ref MyDynamoDBTable 
+       AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1    
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - dynamodb:DeleteItem
+        Resource: !GetAtt MyDynamoDBTable.Arn     
+    events:
+      - http:
+          path: notes/{id}
+          method: delete
+          authorizer: authorizer
+
+  getAllNotes:
+    handler: index.getAllNotes
+    environment:
+       NOTES_TABLE_NAME: !Ref MyDynamoDBTable 
+       AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1    
+    iamRoleStatements:
+      - Effect: Allow
+        Action: 
+          - dynamodb:Scan
+        Resource: !GetAtt MyDynamoDBTable.Arn   
+    events:
+      - http:
+          path: notes
+          method: get
+          authorizer: 
+             name: userpool_authorizer
+             type: COGNITO_USER_POOLS
+             arn: !GetAtt cognitoUserPool.Arn
+             #  ${ssm:/notes/dev/userPoolId} arn:aws:cognito-idp:us-east-1:544938242491:userpool/us-east-1_XUdI3t9qW
+
+plugins:
+  - serverless-iam-roles-per-function
+
+resources:
+  Resources:
+    ${file(resources.yml)}

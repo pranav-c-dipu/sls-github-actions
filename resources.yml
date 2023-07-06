@@ -1,0 +1,60 @@
+# dynamo db table
+  MyDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: notes-pranav-v3
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: notesId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: notesId
+            KeyType: HASH  
+
+# cognito user pool
+  cognitoUserPool: #logical name
+    Type: AWS::Cognito::UserPool
+    Properties:
+        UserPoolName: MyNotesUPP
+
+ # user pool web client
+  cognitoUserPoolWebClient: 
+     Type: AWS::Cognito::UserPoolClient
+     Properties:
+       UserPoolId: !Ref cognitoUserPool
+       ClientName: web   
+       AllowedOAuthFlowsUserPoolClient: true 
+       SupportedIdentityProviders: 
+         - COGNITO
+       AllowedOAuthScopes: 
+         - phone
+         - email
+         - profile
+         - openid
+       AllowedOAuthFlows: 
+         - implicit
+       CallbackURLs: 
+        - http://localhost:3000
+
+
+
+
+# user pol domain
+  cognitoUserPoolDomain:
+     Type: AWS::Cognito::UserPoolDomain
+     Properties: 
+           Domain: mynotespd
+           UserPoolId: !Ref cognitoUserPool     
+           
+  # applications parameters   
+  userPoolIdParam:
+     Type: AWS::SSM::Parameter
+     Properties:
+           Name: /notes/dev/userPoolId
+           Type: String
+           Value: !GetAtt cognitoUserPool.Arn     
+   
+ 
+
+
+            
