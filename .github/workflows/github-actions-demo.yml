@@ -11,8 +11,8 @@ jobs:
     name: production deployment
     runs-on: ubuntu-latest
     environment: 
-       name: Production
-       url: https://test.com
+      name: Production
+      url: https://test.com
       #  for referring to prod environment secrets
     strategy:
       matrix:
